@@ -23,7 +23,7 @@ export default function AuthModal({ onClose }: AuthModalProps) {
     }
 
     try {
-      await login(email, password);
+      await login(email);
       onClose();
     } catch (err) {
       setError('Login failed. Please try again.');
