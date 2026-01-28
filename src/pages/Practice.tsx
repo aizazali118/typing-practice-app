@@ -44,16 +44,16 @@ export default function Practice() {
 
   // Timer logic
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     
     if (isActive && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft((prev) => {
           if (prev <= 1) {
             handleTimeEnd();
-            return 0;
+            return prev as 30 | 10 | 20 | 60 | 120 | 180 | 300 | 600;
           }
-          return prev - 1;
+          return (prev - 1) as 30 | 10 | 20 | 60 | 120 | 180 | 300 | 600;
         });
       }, 1000);
     }

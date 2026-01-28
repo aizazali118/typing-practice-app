@@ -8,7 +8,7 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string) => Promise<void>;
   loginAsGuest: () => void;
   logout: () => void;
   isAuthenticated: boolean;
@@ -27,7 +27,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const login = async (email: string) => {
     // Simulate authentication (in real app, this would call an API)
     const newUser: User = {
       email,
