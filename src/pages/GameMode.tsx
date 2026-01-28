@@ -39,13 +39,13 @@ export default function GameMode() {
   const getSpeedConfig = () => {
     switch (gameSpeed) {
       case 'slow':
-        return { fallSpeed: 1, spawnInterval: 2000 };
+        return { fallSpeed: 0.2, spawnInterval: 3500 };
       case 'medium':
-        return { fallSpeed: 2, spawnInterval: 1500 };
+        return { fallSpeed: 0.5, spawnInterval: 2000 };
       case 'fast':
-        return { fallSpeed: 3, spawnInterval: 1000 };
+        return { fallSpeed: 0.9, spawnInterval: 1200 };
       default:
-        return { fallSpeed: 2, spawnInterval: 1500 };
+        return { fallSpeed: 0.5, spawnInterval: 2000 };
     }
   };
 

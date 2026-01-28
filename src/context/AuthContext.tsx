@@ -36,6 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     setUser(newUser);
     localStorage.setItem('user', JSON.stringify(newUser));
+    
+    // Save login to admin panel
+    const existingLogins = JSON.parse(localStorage.getItem('userLogins') || '[]');
+    const newLogin = {
+      username: newUser.name,
+      email: newUser.email,
+      timestamp: new Date().toLocaleString()
+    };
+    existingLogins.push(newLogin);
+    localStorage.setItem('userLogins', JSON.stringify(existingLogins));
   };
 
   const loginAsGuest = () => {

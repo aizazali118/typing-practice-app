@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
-import { FaTimes } from 'react-icons/fa';
+import { FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { useRef, useState } from 'react';
 import { useSettings, TimerDuration, TextDifficulty, GameSpeed } from '../context/SettingsContext';
 
 interface SettingsProps {
@@ -19,8 +20,15 @@ export default function Settings({ onClose }: SettingsProps) {
     musicVolume,
     setMusicVolume,
     loginRequired,
-    setLoginRequired
+    setLoginRequired,
+    customMusic,
+    addCustomMusic,
+    removeCustomMusic
   } = useSettings();
+
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const timerOptions: { value: TimerDuration; label: string }[] = [
     { value: 10, label: '10 seconds' },
@@ -32,6 +40,29 @@ export default function Settings({ onClose }: SettingsProps) {
     { value: 300, label: '5 minutes' },
     { value: 600, label: '10 minutes' }
   ];
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      await addCustomMusic(file);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload music');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <motion.div
@@ -175,7 +206,71 @@ export default function Settings({ onClose }: SettingsProps) {
             )}
           </div>
 
-          {/* Login Requirement */}
+          {/* Music Library Management */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-300 mb-3">
+              Music Library ({customMusic.length} custom)
+            </label>
+            
+            <motion.button
+              onClick={triggerFileInput}
+              disabled={isUploading}
+              className="mb-4 py-2 px-4 rounded-lg font-medium transition-all bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              <FaPlus className="inline mr-2" />
+              Add Music from Device
+            </motion.button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="audio/*"
+              onChange={handleFileUpload}
+              className="hidden"
+              disabled={isUploading}
+            />
+
+            {uploadError && (
+              <div className="mb-3 p-3 bg-red-500/20 border border-red-500 rounded-lg text-red-400 text-sm">
+                {uploadError}
+              </div>
+            )}
+
+            {customMusic.length > 0 && (
+              <div className="space-y-2">
+                <p className="text-xs text-gray-400 mb-2">Your music files:</p>
+                {customMusic.map((music) => (
+                  <motion.div
+                    key={music.id}
+                    className="flex items-center justify-between p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-all"
+                    whileHover={{ scale: 1.02 }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-gray-300 truncate">{music.name}</p>
+                      <p className="text-xs text-gray-500">
+                        Added {new Date(music.addedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <motion.button
+                      onClick={() => removeCustomMusic(music.id)}
+                      className="ml-2 p-2 hover:bg-red-500/20 rounded-lg transition-all text-red-400"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                      title="Remove"
+                    >
+                      <FaTrash className="text-sm" />
+                    </motion.button>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 mt-2">
+              Upload MP3, WAV, or other audio formats. Max 10MB per file.
+            </p>
+          </div>
           <div>
             <label className="block text-sm font-semibold text-gray-300 mb-3">
               Authentication

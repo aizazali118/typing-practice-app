@@ -1,28 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaMusic, FaPlay, FaPause, FaVolumeUp, FaVolumeMute } from 'react-icons/fa';
+import { FaMusic, FaPlay, FaPause, FaVolumeUp, FaVolumeMute, FaPlus } from 'react-icons/fa';
 import { useSettings } from '../context/SettingsContext';
 
 export default function AudioPlayer() {
-  const { musicEnabled, musicVolume } = useSettings();
+  const { musicEnabled, musicVolume, customMusic, addCustomMusic } = useSettings();
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [showControls, setShowControls] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Audio sources (using public domain/royalty-free URLs as placeholders)
-  // Replace these with your own music files
-  const audioSources = [
+  // Audio sources (default + custom)
+  const defaultAudioSources = [
     // Placeholder - replace with actual music file URLs
     'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
     'https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3'
+  ];
+
+  const allAudioSources = [
+    ...defaultAudioSources,
+    ...customMusic.map((music) => music.url)
   ];
 
   const [currentTrack, setCurrentTrack] = useState(0);
 
   useEffect(() => {
     // Create audio element
-    audioRef.current = new Audio(audioSources[currentTrack]);
+    audioRef.current = new Audio(allAudioSources[currentTrack]);
     audioRef.current.loop = true;
     audioRef.current.volume = musicVolume;
 
@@ -42,7 +49,7 @@ export default function AudioPlayer() {
         audioRef.current = null;
       }
     };
-  }, [currentTrack]);
+  }, [currentTrack, allAudioSources]);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -81,7 +88,31 @@ export default function AudioPlayer() {
   };
 
   const changeTrack = () => {
-    setCurrentTrack((prev) => (prev + 1) % audioSources.length);
+    setCurrentTrack((prev) => (prev + 1) % allAudioSources.length);
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadError(null);
+
+    try {
+      await addCustomMusic(file);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      setUploadError(error instanceof Error ? error.message : 'Failed to upload music');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
   };
 
   if (!musicEnabled) return null;
@@ -138,9 +169,35 @@ export default function AudioPlayer() {
                   <FaMusic className="text-pink-400" />
                 </motion.button>
 
+                <motion.button
+                  onClick={triggerFileInput}
+                  className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  title="Add Music"
+                  disabled={isUploading}
+                >
+                  <FaPlus className={isUploading ? 'text-gray-400' : 'text-green-400'} />
+                </motion.button>
+
                 <span className="text-xs text-gray-400 ml-2">
-                  Track {currentTrack + 1}/{audioSources.length}
+                  {allAudioSources.length > 0
+                    ? `${currentTrack + 1}/${allAudioSources.length}`
+                    : 'No music'}
                 </span>
+
+                {uploadError && (
+                  <span className="text-xs text-red-400 ml-2">{uploadError}</span>
+                )}
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="audio/*"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  disabled={isUploading}
+                />
               </motion.div>
             )}
           </AnimatePresence>
